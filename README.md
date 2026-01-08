@@ -116,17 +116,6 @@ http://localhost:8080
 
 ---
 
-### 5. Run the UI
-
-Navigate to the UI folder and start the frontend (example):
-
-```bash
-npm install
-npm start
-```
-
----
-
 ## Usage
 
 1. Open the web UI
