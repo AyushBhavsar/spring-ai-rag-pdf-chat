@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>PDF RAG Chat - Intelligent Document Assistant</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #f7fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e6f3ff;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .file-label:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .file-name {
+            margin-top: 15px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5);
+        }
+        
+        .status-message {
+            margin-top: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+        
+        .status-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+        
+        .status-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border-left: 4px solid #3182ce;
+        }
+        
+        .textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        .textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .response-container {
+            margin-top: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .response-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .response-box {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #2d3748;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .icon {
+            font-size: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [file, setFile] = useState(null);
+            const [uploadStatus, setUploadStatus] = useState('');
+            const [uploadLoading, setUploadLoading] = useState(false);
+            const [question, setQuestion] = useState('');
+            const [response, setResponse] = useState('');
+            const [chatLoading, setChatLoading] = useState(false);
+            const [isDragging, setIsDragging] = useState(false);
+
+            const handleFileChange = (e) => {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                    setFile(selectedFile);
+                    setUploadStatus('');
+                }
+            };
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                setIsDragging(true);
+            };
+
+            const handleDragLeave = (e) => {
+                e.preventDefault();
+                setIsDragging(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const droppedFile = e.dataTransfer.files[0];
+                if (droppedFile && droppedFile.type === 'application/pdf') {
+                    setFile(droppedFile);
+                    setUploadStatus('');
+                } else {
+                    setUploadStatus('Please drop a PDF file');
+                }
+            };
+
+            const handleUpload = async () => {
+                if (!file) {
+                    setUploadStatus('Please select a file');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    setUploadLoading(true);
+                    setUploadStatus('Uploading and processing PDF...');
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!res.ok) {
+                        const text = await res.text();
+                        setUploadStatus('Upload failed: ' + text);
+                        return;
+                    }
+
+                    const text = await res.text();
+                    setUploadStatus('Upload successful! PDF is ready for questions.');
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    setUploadStatus('Error: ' + (error.message || 'Network error. Please check if the server is running.'));
+                } finally {
+                    setUploadLoading(false);
+                }
+            };
+
+            const handleChat = async () => {
+                if (!question.trim()) {
+                    return;
+                }
+
+                try {
+                    setChatLoading(true);
+                    setResponse('');
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain'
+                        },
+                        body: question
+                    });
+
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        setResponse('Error: ' + errorText);
+                        return;
+                    }
+
+                    const text = await res.text();
+                    setResponse(text);
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    setResponse('Error: ' + (error.message || 'Network error. Please check if the server is running.'));
+                } finally {
+                    setChatLoading(false);
+                }
+            };
+
+            const getStatusClass = (status) => {
+                if (!status) return '';
+                if (status.includes('success') || status.includes('ready')) return 'status-success';
+                if (status.includes('failed') || status.includes('Error')) return 'status-error';
+                return 'status-info';
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>📄 PDF RAG Chat</h1>
+                        <p>Intelligent Document Assistant powered by AI</p>
+                    </div>
+                    
+                    <div className="card">
+                        <div className="card-title">
+                            <span className="icon">📤</span>
+                            <span>Upload PDF Document</span>
+                        </div>
+                        <div 
+                            className={`upload-area ${isDragging ? 'dragover' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => document.getElementById('file-input').click()}
+                        >
+                            <div className="icon" style={{ fontSize: '3rem', marginBottom: '15px' }}>📎</div>
+                            <p style={{ color: '#718096', marginBottom: '10px' }}>
+                                {file ? `Selected: ${file.name}` : 'Drag and drop your PDF here, or click to browse'}
+                            </p>
+                            <p style={{ color: '#a0aec0', fontSize: '0.9rem' }}>
+                                Maximum file size: 50MB
+                            </p>
+                            <input
+                                id="file-input"
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handleFileChange}
+                                className="file-input"
+                            />
+                            <label htmlFor="file-input" className="file-label">
+                                Choose File
+                            </label>
+                        </div>
+                        
+                        {file && (
+                            <div className="file-name">
+                                ✓ {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                            </div>
+                        )}
+                        
+                        <button 
+                            onClick={handleUpload} 
+                            disabled={!file || uploadLoading}
+                            className="btn btn-secondary"
+                            style={{ marginTop: '20px', width: '100%' }}
+                        >
+                            {uploadLoading ? (
+                                <>
+                                    <span className="loading-spinner" style={{ marginRight: '10px' }}></span>
+                                    Processing...
+                                </>
+                            ) : (
+                                'Upload & Process PDF'
+                            )}
+                        </button>
+                        
+                        {uploadStatus && (
+                            <div className={`status-message ${getStatusClass(uploadStatus)}`}>
+                                {uploadStatus.includes('success') || uploadStatus.includes('ready') ? '✓' : '⚠'}
+                                <span>{uploadStatus}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="card">
+                        <div className="card-title">
+                            <span className="icon">💬</span>
+                            <span>Ask Questions</span>
+                        </div>
+                        <textarea
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            placeholder="Enter your question about the uploaded PDF document..."
+                            className="textarea"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && e.ctrlKey) {
+                                    handleChat();
+                                }
+                            }}
+                        />
+                        <button 
+                            onClick={handleChat} 
+                            disabled={!question.trim() || chatLoading}
+                            className="btn"
+                            style={{ marginTop: '15px', width: '100%' }}
+                        >
+                            {chatLoading ? (
+                                <>
+                                    <span className="loading-spinner" style={{ marginRight: '10px' }}></span>
+                                    Thinking...
+                                </>
+                            ) : (
+                                'Ask Question (Ctrl+Enter)'
+                            )}
+                        </button>
+                        
+                        {response && (
+                            <div className="response-container">
+                                <div className="response-header">
+                                    <span className="icon">🤖</span>
+                                    <span>AI Response</span>
+                                </div>
+                                <div className="response-box">
+                                    {response}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
