@@ -1,113 +1,183 @@
-# Spring AI RAG Tutorial with Ollama and PGVector
 
-This project demonstrates the implementation of Retrieval Augmented Generation (RAG) using Spring AI, Ollama, and PGVector Database. The application serves as a personal assistant that can answer questions about Spring Boot by referencing the Spring Boot Reference Documentation PDF.
+# Spring AI RAG PDF Chat Application
+
+A full-stack Retrieval-Augmented Generation (RAG) application built with **Spring Boot** and **Spring AI** that allows users to **upload PDF documents via a web UI** and ask natural language questions against their content.  
+The system dynamically ingests uploaded PDFs into a **PGVector-backed vector store** and uses a **locally running Ollama LLM** to generate context-aware answers.
+
+---
 
 ## Features
 
-- Uses Spring AI for RAG implementation
-- Integrates with Ollama for LLM capabilities
-- Stores and retrieves vector embeddings using PGVector
-- Automatically processes and ingests Spring Boot documentation
-- Provides REST API for question-answering
+- 📄 Upload PDFs (up to 50 MB) via web UI
+- 💬 Ask natural language questions against uploaded documents
+- 🧠 Retrieval-Augmented Generation (RAG) using Spring AI
+- 🧩 Vector storage with PostgreSQL + PGVector
+- 🏠 Local LLM inference using Ollama
+- 🔁 On-demand document ingestion (no startup-only ingestion)
 
-## Architecture
+---
 
-### RAG Architecture
-![RAG Architecture](screenshots/rag_architecture.png)
+## Architecture Diagrams
 
-### Document Ingestion Pipeline
-![Document Ingestion Pipeline](screenshots/document_ingestion_pipeline.png)
+
+### RAG Flow
+![RAG Flow](screenshots/rag_architecture.png)
+
+### System Architecture
+![System Architecture](screenshots/document_ingestion_pipeline.png)
+
+
+---
+
+## Tech Stack
+
+### Backend
+- Java 21
+- Spring Boot 3.4.x
+- Spring AI (RAG)
+- PostgreSQL + PGVector
+- Apache Tika (PDF parsing)
+
+### Frontend
+- React (minimal UI for upload + chat)
+
+### LLM
+- Ollama (local inference)
+- Default model: `qwen2:0.5b`
+
+---
 
 ## Prerequisites
 
 - Java 21
-- Docker and Docker Compose
-- Ollama installed locally
 - Maven
+- Docker & Docker Compose
+- Ollama installed locally
+
+---
 
 ## Setup Instructions
 
-1. **Install Ollama**
-   - Follow the installation instructions at [Ollama's official website](https://ollama.ai)
-   - Ensure Ollama is running on `http://localhost:11434`
+### 1. Install and run Ollama
+Install Ollama from:
+```
 
-2. **Pull the Mistral Model**
-   ```bash
-   ollama pull mistral
-   ```
-   Note: If you skip this step, the application will automatically pull the model when it first starts, which might take a few minutes.
+[https://ollama.com](https://ollama.com)
 
-3. **Start PGVector Database**
-   ```bash
-   docker-compose up -d
-   ```
-   This will start a PostgreSQL database with PGVector extension on port 5432.
+````
 
-4. **Build the Application**
-   ```bash
-   ./mvnw clean install
-   ```
+Verify it is running:
+```bash
+curl http://localhost:11434/api/tags
+````
 
-## Running the Application
+Pull the required model:
 
-1. **Start the Spring Boot Application**
-   ```bash
-   ./mvnw spring-boot:run
-   ```
+```bash
+ollama pull qwen2:0.5b
+```
 
-2. The application will automatically:
-   - Initialize the vector store schema
-   - Load and process the Spring Boot reference PDF
-   - Start the REST API server
+---
+
+### 2. Start PostgreSQL with PGVector
+
+```bash
+docker compose up -d
+```
+
+Postgres will be available on port `5432`.
+
+---
+
+### 3. Configure application
+
+Update `application.properties` if needed:
+
+```properties
+spring.ai.ollama.base-url=http://localhost:11434
+spring.ai.ollama.chat.model=qwen2:0.5b
+spring.ai.ollama.embedding.model=qwen2:0.5b
+spring.ai.ollama.init.pull-model-strategy=never
+```
+
+---
+
+### 4. Run the backend
+
+```bash
+./mvnw spring-boot:run
+```
+
+The API will start on:
+
+```
+http://localhost:8080
+```
+
+---
+
+### 5. Run the UI
+
+Navigate to the UI folder and start the frontend (example):
+
+```bash
+npm install
+npm start
+```
+
+---
 
 ## Usage
 
-Send questions about Spring Boot to the API endpoint:
+1. Open the web UI
+2. Upload a PDF document
+3. Ask questions related to the uploaded document
+4. Receive answers generated using RAG over your document content
 
-```bash
-curl -X POST http://localhost:8080/api/chat \
-     -H "Content-Type: text/plain" \
-     -d "What is Spring Boot?"
+---
+
+## API Endpoints
+
+### Upload PDF
+
+```
+POST /api/upload
+Content-Type: multipart/form-data
 ```
 
-## Technical Details
+### Ask Question
 
-- **Vector Database**: PGVector (PostgreSQL with vector extension)
-  - Database: vectordb
-  - Username: testuser
-  - Password: testpwd
-  - Port: 5432
+```
+POST /api/chat
+Content-Type: text/plain
+```
 
-- **LLM Configuration**:
-  - Model: Mistral
-  - Base URL: http://localhost:11434
-  - Initialization timeout: 5 minutes
-  - Auto-pulls model if not available locally
-  - Pull strategy: when_missing
+---
 
-- **Document Processing**:
-  - Uses Apache Tika for PDF reading
-  - Implements text splitting for optimal chunk size
-  - Automatically ingests documentation on startup
+## Important Notes
 
-## Project Structure
+* This project uses **local LLM inference** via Ollama
+* It is **not serverless** and **not deployed on Vercel**
+* Designed for **local execution, demos, and learning**
+* Uploaded PDFs and vector data are **not committed to GitHub**
 
-- `ChatController`: Handles REST API requests
-- `DocumentIngestionService`: Processes and stores documentation
-- `application.properties`: Contains configuration for Ollama and PGVector
-- `compose.yml`: Docker composition for PGVector database
+---
 
-## Troubleshooting
+## Screenshots
 
-1. Ensure Ollama is running and accessible at http://localhost:11434
-2. Verify that the PostgreSQL container is running: `docker ps`
-3. Check application logs for any initialization errors
-4. Ensure the Mistral model is properly pulled in Ollama
+### Upload UI
+![PDF Upload UI](screenshots/ui1.png)
 
-## Dependencies
+### Question UI
+![Document Uploaded](screenshots/uiq.png)
 
-- Spring Boot 3.4.3
-- Spring AI (version 1.0.0-M6)
-- PGVector
-- Apache Tika
-- Spring Boot Docker Compose Support
+### Answer UI
+![Question Answering](screenshots/uia.png)
+
+---
+
+## License
+
+This project is intended for educational and learning purposes.
+
+
